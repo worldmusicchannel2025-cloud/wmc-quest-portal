@@ -3,7 +3,7 @@ import google.generativeai as genai
 from datetime import datetime
 from fpdf import FPDF
 
-# --- DEINE ECHTEN LINKS (BITTE HIER EINTRAGEN!) ---
+# --- DEINE ECHTEN LINKS ---
 YOUTUBE_VIDEO_URL = "https://www.youtube.com/@WorldMusicChannel" 
 HOMEPAGE_URL = "https://www.worldmusicchannel.com"
 SHOP_LINKS = {
@@ -13,50 +13,37 @@ SHOP_LINKS = {
     "merch": "https://www.worldmusicchannel.com/shop/merch"
 }
 
-# --- PDF GENERATOR (CORPORATE DESIGN) ---
+# --- PDF GENERATOR ---
 class WMCPDF(FPDF):
     def header(self):
-        # Logo oben links (Position x=10, y=8, Breite=33mm)
-        # Try-Except fängt ab, falls das Logo mal fehlt
         try:
             self.image('logo.png', 10, 8, 33)
         except:
-            pass # Kein Logo, kein Drama
-            
+            pass 
         self.set_font('Arial', 'B', 15)
-        # Titel nach rechts verschieben (damit er nicht im Logo steht)
         self.cell(80) 
         self.cell(30, 10, 'World Music Channel', 0, 0, 'C')
         self.ln(20)
-        # Linie ziehen (Corporate Style)
         self.set_line_width(0.5)
         self.line(10, 30, 200, 30)
         self.ln(10)
 
     def footer(self):
-        # Position 1.5 cm von unten
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
-        self.set_text_color(128) # Grau
+        self.set_text_color(128)
         self.cell(0, 10, f'Page {self.page_no()} - Official WMC Artist Portal', 0, 0, 'C')
 
 def create_corporate_pdf(interpretation_text, code_name):
     pdf = WMCPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
-    
-    # Überschrift Quest
     pdf.set_font("Arial", "B", 14)
-    pdf.set_text_color(0) # Schwarz
     pdf.cell(0, 10, f"Interpretation: {code_name}", ln=True, align='L')
     pdf.ln(5)
-    
-    # Der Text
     pdf.set_font("Arial", size=11)
-    # Text bereinigen für PDF (Sonderzeichen-Schutz)
     safe_text = interpretation_text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 8, safe_text)
-    
     return pdf.output(dest='S').encode('latin-1')
 
 # --- CONFIGURATION ---
@@ -78,16 +65,33 @@ MODELS_CONFIG = {
     }
 }
 
-# --- UI DESIGN ---
+# --- UI DESIGN & HEADER ---
 st.set_page_config(page_title="WMC Artist Portal", page_icon="🎵")
 
-# Logo in der App
-try:
-    st.image("logo.png", width=200) 
-except:
-    pass
+# *** NEUER HEADER BEREICH ***
+# Wir teilen den oberen Bereich in 2 Spalten: Links Logo, Rechts Werbung/Name
+col_logo, col_info = st.columns([1, 2])
 
-st.title("WMC Artist Portal 🎵")
+with col_logo:
+    try:
+        st.image("logo.png", use_container_width=True)
+    except:
+        st.header("🎵") # Fallback
+
+with col_info:
+    # Hier nutzen wir den Platz rechts oben!
+    st.title("World Music Channel")
+    st.markdown("**Official Artist Portal**")
+    
+    # Werbefläche / Album Cover
+    try:
+        # Lade ein Bild namens 'album.jpg' hoch für diesen Platz!
+        st.image("album.jpg", width=300, caption="New Album Out Now!")
+    except:
+        # Falls kein Album-Bild da ist, lassen wir es leer oder zeigen Text
+        st.info("New Album 'City Lights' - Available in Shop!")
+
+st.markdown("---") # Trennlinie zum Start der App
 
 # --- APP LOGIC ---
 if datetime.now() > QUEST_END_DATE:
@@ -95,7 +99,8 @@ if datetime.now() > QUEST_END_DATE:
     st.link_button("Go to Homepage", HOMEPAGE_URL)
 else:
     st.markdown("""
-    **Unlock the Soul of the Music.** Paste your lyrics below.
+    ### ✨ Unlock the Soul of the Music
+    **Paste your favorite lyrics below.** Our AI Muse will reveal their hidden meaning.
     """)
 
     q_code = st.text_input("Enter Quest Code:").upper()
@@ -116,11 +121,9 @@ else:
                         # --- ERGEBNIS ---
                         st.markdown("---")
                         st.markdown("### 🔮 Your Personal Interpretation")
-                        
-                        # Schöne Info-Box für Lesbarkeit
                         st.info(response.text)
                         
-                        # --- PDF DOWNLOAD (Corporate) ---
+                        # --- PDF DOWNLOAD ---
                         pdf_bytes = create_corporate_pdf(response.text, MODELS_CONFIG[q_code]['name'])
                         st.download_button(
                             label="📄 Download Official PDF (WMC Design)",
@@ -143,7 +146,6 @@ else:
 st.markdown("---")
 st.markdown("### 🛍️ Exclusive WMC Collection")
 
-# 4 Shop Spalten
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
@@ -166,10 +168,8 @@ with c4:
     st.caption("Shirt & Mug")
     st.link_button("Go to Shop", SHOP_LINKS["merch"])
 
-# --- HOMEPAGE LINK (GANZ UNTEN) ---
 st.markdown("---")
 st.markdown("### 🌐 Explore More")
-# Zentrierter Button (Workaround mit Columns)
 col_l, col_center, col_r = st.columns([1, 2, 1])
 with col_center:
     st.link_button("🌐 Visit Official Homepage (World Music Channel)", HOMEPAGE_URL, use_container_width=True)
