@@ -4,7 +4,6 @@ from datetime import datetime
 from fpdf import FPDF
 
 # --- DEINE ECHTEN LINKS ---
-# WICHTIG: Hier deine exakte YouTube-URL eintragen, damit sie auf dem Papier steht!
 YOUTUBE_VIDEO_URL = "https://www.youtube.com/@WorldMusicChannel-y3s" 
 HOMEPAGE_URL = "https://www.worldmusicchannel.com"
 SHOP_LINKS = {
@@ -14,23 +13,23 @@ SHOP_LINKS = {
     "merch": "https://www.worldmusicchannel.com/shop/merch"
 }
 
-# --- PDF GENERATOR (Mit Slogan & Print-URL) ---
+# --- PDF GENERATOR (FIX: Keine Sonderzeichen wie ▶) ---
 class WMCPDF(FPDF):
     def header(self):
-        # 1. Logo (links oben)
+        # 1. Logo
         try:
             self.image('logo.png', 10, 10, 30)
         except:
             pass 
         
-        # 2. Titel & MTP (rechts oben)
+        # 2. Titel & MTP
         self.set_y(15)
         self.set_font('Arial', 'B', 16)
         self.cell(0, 8, 'World Music Channel', 0, 1, 'R')
         
-        # SLOGAN HINZUFÜGEN
-        self.set_font('Arial', 'BI', 12) # Fett & Kursiv
-        self.set_text_color(50, 50, 50) # Dunkelgrau
+        # Slogan
+        self.set_font('Arial', 'BI', 12)
+        self.set_text_color(50, 50, 50)
         self.cell(0, 6, '"Feel the Music"', 0, 1, 'R')
         
         # Subtitle
@@ -46,14 +45,15 @@ class WMCPDF(FPDF):
         self.ln(10)
 
     def footer(self):
-        self.set_y(-25) # Etwas mehr Platz für zwei Zeilen
+        self.set_y(-25)
         
-        # 1. Klickbarer Text (Blau)
+        # 1. Klickbarer Text (Blau) - FIX: ">>" statt "▶"
         self.set_font('Arial', 'B', 10)
         self.set_text_color(0, 0, 255)
-        self.cell(0, 5, '▶ Click here to visit our YouTube Channel', 0, 1, 'C', link=YOUTUBE_VIDEO_URL)
+        # Hier lag der Fehler: Das Symbol wurde ersetzt durch ">>"
+        self.cell(0, 5, '>> Click here to visit our YouTube Channel', 0, 1, 'C', link=YOUTUBE_VIDEO_URL)
         
-        # 2. Ausgeschriebene URL für Ausdrucke (Schwarz)
+        # 2. Print-URL (Schwarz)
         self.set_font('Arial', '', 9)
         self.set_text_color(0, 0, 0)
         self.cell(0, 5, f'URL: {YOUTUBE_VIDEO_URL}', 0, 1, 'C')
@@ -68,14 +68,15 @@ def create_corporate_pdf(interpretation_text, code_name):
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=20)
     
-    # Header für den Inhalt
+    # Header Content
     pdf.set_font("Arial", "B", 14)
     pdf.set_text_color(0)
     pdf.cell(0, 10, f"Interpretation: {code_name}", ln=True, align='L')
     pdf.ln(5)
     
-    # Text Body
+    # Text Body - Sicher gegen Emojis!
     pdf.set_font("Arial", size=11)
+    # Dieser Filter entfernt alle Zeichen, die das PDF zum Absturz bringen könnten
     safe_text = interpretation_text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 7, safe_text)
     
@@ -117,7 +118,7 @@ with col_logo:
 
 with col_info:
     st.title("World Music Channel")
-    # HIER IST DER NEUE SLOGAN IM HEADER:
+    # Slogan
     st.markdown("### *Feel the Music*") 
     st.caption("Official Artist Portal")
     
