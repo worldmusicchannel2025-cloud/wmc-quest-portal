@@ -44,7 +44,7 @@ else:
         
         if st.button("Artwork & Interpretation generieren"):
             # Wir nutzen das Gemini 3 Flash Modell für maximale Effizienz
-            model = genai.GenerativeModel'gemini-1.5-flash', 
+            model = genai.GenerativeModel gemini-1.5-flash', 
                                           system_instruction=MODELS = genai.GenerativeModel('models/gemini-1.5-flash',system_instruction=MODELS[q_code]['persona'])
             response = model.generate_content(user_lyrics)
             
