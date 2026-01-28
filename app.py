@@ -3,7 +3,6 @@ import google.generativeai as genai
 from datetime import datetime
 
 # --- KONFIGURATION ---
-# Dein Guthaben von 236.48 CHF deckt die Nutzung sicher ab
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
@@ -13,9 +12,18 @@ except Exception:
 
 # --- QUEST EINSTELLUNGEN ---
 QUEST_END_DATE = datetime(2026, 2, 15) 
+
+# HIER IST DAS MULTI-LANGUAGE UPDATE:
 MODELS_CONFIG = {
     "LYA-SESSION-2": {
-        "persona": "Du bist die digitale Muse von Lya Nights. Dein Stil ist urban, poetisch und geheimnisvoll. Interpretiere die Songzeile tiefgründig.",
+        # Wir geben die Anweisung jetzt so, dass die KI sich anpasst
+        "persona": (
+            "Du bist die digitale Muse von Lya Nights. Dein Stil ist urban, poetisch und geheimnisvoll. "
+            "Interpretiere die Songzeile tiefgründig. "
+            "WICHTIG: Antworte immer exakt in der Sprache der eingegebenen Lyrics. "
+            "Wenn die Lyrics Englisch sind, antworte auf Englisch. "
+            "Wenn sie Spanisch sind, auf Spanisch."
+        ),
         "name": "Lya Nights - City Lights"
     }
 }
@@ -32,12 +40,12 @@ else:
     
     if q_code in MODELS_CONFIG:
         st.success(f"✅ Verbunden mit: {MODELS_CONFIG[q_code]['name']}")
-        user_lyrics = st.text_area("Kopiere hier deine Lieblings-Lyrics rein:")
+        user_lyrics = st.text_area("Kopiere hier deine Lieblings-Lyrics rein (egal welche Sprache):")
         
-        if st.button("Artwork & Interpretation generieren"):
+        if st.button("Interpretation generieren"):
             with st.spinner("Die Muse verbindet sich..."):
                 try:
-                    # HIER IST DIE LÖSUNG: Wir nutzen exakt den Namen aus deiner Liste
+                    # Wir nutzen das bewährte 2.0 Modell
                     model = genai.GenerativeModel(
                         model_name='models/gemini-2.0-flash', 
                         system_instruction=MODELS_CONFIG[q_code]['persona']
