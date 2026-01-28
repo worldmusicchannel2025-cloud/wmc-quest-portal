@@ -1,34 +1,56 @@
 import streamlit as st
 import google.generativeai as genai
+from datetime import datetime
 
-# --- DIAGNOSE MODUS ---
-st.set_page_config(page_title="System Check", page_icon="🛠️")
-st.title("🛠️ WMC System Diagnose")
-
-# API Key laden
+# --- KONFIGURATION ---
+# Dein Guthaben von 236.48 CHF deckt die Nutzung sicher ab
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
-    st.success("✅ API Key gefunden.")
-except Exception as e:
-    st.error(f"❌ API Key Fehler: {e}")
+except Exception:
+    st.error("Fehler: API Key nicht gefunden. Bitte in Streamlit Secrets eintragen.")
     st.stop()
 
-# Modelle abfragen und anzeigen
-st.subheader("Google hat diese Modelle für dich freigeschaltet:")
-try:
-    found_models = []
-    for m in genai.list_models():
-        # Wir suchen alles, was Inhalte generieren kann
-        if 'generateContent' in m.supported_generation_methods:
-            found_models.append(m.name)
-            st.code(m.name)
-            
-    if not found_models:
-        st.warning("⚠️ Keine Modelle gefunden. Prüfe API-Rechte.")
-    else:
-        st.success(f"✅ {len(found_models)} Modelle gefunden!")
-        st.info("Bitte mache einen Screenshot von dieser Liste oder kopiere den Namen, der 'flash' enthält.")
+# --- QUEST EINSTELLUNGEN ---
+QUEST_END_DATE = datetime(2026, 2, 15) 
+MODELS_CONFIG = {
+    "LYA-SESSION-2": {
+        "persona": "Du bist die digitale Muse von Lya Nights. Dein Stil ist urban, poetisch und geheimnisvoll. Interpretiere die Songzeile tiefgründig.",
+        "name": "Lya Nights - City Lights"
+    }
+}
 
-except Exception as e:
-    st.error(f"❌ Verbindungsfehler zu Google: {e}")
+# --- UI DESIGN ---
+st.set_page_config(page_title="WMC Artist Portal", page_icon="🎵")
+st.title("WMC Artist Portal 🎵")
+
+# --- APP LOGIK ---
+if datetime.now() > QUEST_END_DATE:
+    st.error("🛑 Diese Quest ist leider beendet.")
+else:
+    q_code = st.text_input("Gib deinen Quest-Code aus dem Video ein:").upper()
+    
+    if q_code in MODELS_CONFIG:
+        st.success(f"✅ Verbunden mit: {MODELS_CONFIG[q_code]['name']}")
+        user_lyrics = st.text_area("Kopiere hier deine Lieblings-Lyrics rein:")
+        
+        if st.button("Artwork & Interpretation generieren"):
+            with st.spinner("Die Muse verbindet sich..."):
+                try:
+                    # HIER IST DIE LÖSUNG: Wir nutzen exakt den Namen aus deiner Liste
+                    model = genai.GenerativeModel(
+                        model_name='models/gemini-2.0-flash', 
+                        system_instruction=MODELS_CONFIG[q_code]['persona']
+                    )
+                    
+                    response = model.generate_content(user_lyrics)
+                    
+                    st.markdown("### Deine persönliche Interpretation:")
+                    st.write(response.text)
+                    st.success("💡 Tipp: Poste das als Kommentar unter das Video!")
+                    
+                except Exception as e:
+                    st.error(f"Ein technischer Fehler ist aufgetreten: {e}")
+                    
+    elif q_code != "":
+        st.warning("Ungültiger Code. Hast du das Video bis zum Ende geschaut?")
