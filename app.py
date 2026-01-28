@@ -42,7 +42,7 @@ class WMCPDF(FPDF):
     def footer(self):
         self.set_y(-25)
         
-        # FIX: ">>" statt "▶" verhindert den Absturz!
+        # WICHTIG: ">>" statt Play-Symbol verhindert PDF-Absturz!
         self.set_font('Arial', 'B', 10)
         self.set_text_color(0, 0, 255)
         self.cell(0, 5, '>> Click here to visit our YouTube Channel', 0, 1, 'C', link=YOUTUBE_VIDEO_URL)
@@ -136,8 +136,8 @@ else:
             if len(user_lyrics) > 5:
                 with st.spinner("Processing..."):
                     try:
-                        # HIER IST DER WECHSEL AUF DAS STABILE 1.5 MODELL:
-                        model = genai.GenerativeModel('models/gemini-1.5-flash', 
+                        # HIER IST DIE LÖSUNG: Wir nehmen die 'Lite' Version aus deiner Liste!
+                        model = genai.GenerativeModel('models/gemini-2.0-flash-lite-001', 
                                                       system_instruction=MODELS_CONFIG[q_code]['persona'])
                         response = model.generate_content(user_lyrics)
                         
@@ -158,8 +158,8 @@ else:
                         st.link_button("Go to YouTube to Comment 🎬", YOUTUBE_VIDEO_URL)
                         
                     except Exception as e:
-                        # Falls 1.5 auch zickt (sehr unwahrscheinlich), zeigen wir den Fehler sauber an
-                        st.error(f"Server Busy (429). Please wait 1 minute and try again. ({e})")
+                        # Detaillierte Fehlermeldung falls etwas schiefgeht
+                        st.error(f"Error ({type(e).__name__}): {e}")
     elif q_code != "":
         st.warning("Invalid Code.")
 
