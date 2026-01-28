@@ -14,7 +14,6 @@ except Exception:
 QUEST_END_DATE = datetime(2026, 2, 15) 
 MODELS_CONFIG = {
     "LYA-SESSION-2": {
-        # System Instruction: AI will adapt to the input language automatically
         "persona": (
             "You are the digital muse of Lya Nights. Your style is urban, poetic, and mysterious. "
             "Interpret the song lyrics deeply. "
@@ -28,15 +27,13 @@ MODELS_CONFIG = {
 # --- UI DESIGN ---
 st.set_page_config(page_title="WMC Artist Portal", page_icon="🎵")
 
-# Logo Integration (Ensure 'logo.png' is uploaded to GitHub!)
-# Falls du noch kein Logo hast, kannst du diese Zeile auskommentieren (# davor setzen)
+# Logo Integration (Bitte sicherstellen, dass 'logo.png' auf GitHub liegt)
 try:
     st.image("logo.png", width=200) 
 except:
-    pass # Kein Fehler anzeigen, wenn Logo fehlt
+    pass 
 
 st.title("WMC Artist Portal 🎵")
-st.markdown("### Unlock your personal interpretation")
 
 # --- APP LOGIC ---
 if datetime.now() > QUEST_END_DATE:
@@ -48,18 +45,30 @@ else:
     if q_code in MODELS_CONFIG:
         st.success(f"✅ Connected to: {MODELS_CONFIG[q_code]['name']}")
         
-        # Limit input to 400 characters to protect API usage
+        # --- DIE "STORY" (Einladender Text) ---
+        st.markdown("""
+        ### ✨ Unlock the Soul of the Music
+        Ready to see your favorite lyrics in a new light? 
+        
+        Our **AI Muse** will analyze the deeper meaning behind the words and rewrite them 
+        into a unique, urban-poetic interpretation just for you. 
+        
+        *Deep. Mysterious. Unique.*
+        """)
+        
+        # Limit input to 300 characters (ca. 4-6 lines)
         user_lyrics = st.text_area(
-            "Paste your favorite lyrics here (max 400 chars):",
-            max_chars=400,
-            height=150
+            "Paste your favorite lyrics here (max 300 chars):",
+            max_chars=300,
+            height=150,
+            placeholder="e.g., 'Neon lights reflect in the rain of the night...'"
         )
         
-        if st.button("Generate Interpretation"):
+        if st.button("✨ Reveal Interpretation"):
             if len(user_lyrics) < 10:
-                st.warning("⚠️ Please enter at least a few words of lyrics.")
+                st.warning("⚠️ Please enter at least a few words to inspire the Muse.")
             else:
-                with st.spinner("The Muse is connecting..."):
+                with st.spinner("The Muse is connecting to the beat..."):
                     try:
                         model = genai.GenerativeModel(
                             model_name='models/gemini-2.0-flash', 
@@ -68,9 +77,10 @@ else:
                         
                         response = model.generate_content(user_lyrics)
                         
-                        st.markdown("### Your Personal Interpretation:")
+                        st.markdown("### 🔮 Your Personal Interpretation:")
                         st.write(response.text)
-                        st.success("💡 Tip: Copy this text and post it as a comment under the YouTube video to win!")
+                        
+                        st.info("💡 **Winning Tip:** Copy the text above and post it as a comment under the YouTube video to enter the contest!")
                         
                     except Exception as e:
                         st.error(f"Technical error: {e}")
