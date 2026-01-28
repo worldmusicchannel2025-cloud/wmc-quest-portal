@@ -5,8 +5,14 @@ from datetime import datetime
 # --- SICHERHEIT: API KEY AUS GITHUB SECRETS LADEN ---
 # Wir nutzen dein Guthaben von 236.48 CHF sicher im Hintergrund
 api_key = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=api_key)
-# --- DEBUG: VERFÜGBARE MODELLE ANZEIGEN ---
+genai.configure(api_key=api_key)# --- DEBUG: VERFÜGBARE MODELLE ANZEIGEN ---
+st.subheader("Verfügbare Modelle (Debug):")
+try:
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            st.code(m.name)
+except Exception as e:
+    st.error(f"Fehler beim Auflisten der Modelle: {e}")# --- DEBUG: VERFÜGBARE MODELLE ANZEIGEN ---
 st.subheader("Verfügbare Modelle (Debug):")
 try:
     for m in genai.list_models():
