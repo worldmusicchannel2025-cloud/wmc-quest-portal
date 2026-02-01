@@ -78,9 +78,8 @@ def create_corporate_pdf(interpretation_text, code_name):
 
 # --- ENGINE (DIREKT-VERBINDUNG) ---
 def get_gemini_response(prompt, api_key):
-    # WICHTIG: Hier steht jetzt 'gemini-pro'. 
-    # Zusammen mit deinem WMC-Key MUSS das gehen.
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    # WICHTIG: Wir nutzen jetzt gemini-1.5-flash (Das moderne Modell für neue Accounts)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     data = {
         "contents": [{"parts": [{"text": prompt}]}]
