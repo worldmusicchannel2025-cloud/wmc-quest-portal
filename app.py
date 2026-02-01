@@ -46,7 +46,7 @@ if not os.path.exists(QR_FILENAME):
     qr = qrcode.make(QR_TARGET)
     qr.save(QR_FILENAME)
 
-# --- PDF GENERATOR (UPDATED BRANDING) ---
+# --- PDF GENERATOR (NEW HEADER & INSPIRATION TEXT) ---
 class WMCPDF(FPDF):
     def header(self):
         try: self.image('logo.png', 10, 10, 25)
@@ -70,11 +70,19 @@ class WMCPDF(FPDF):
 def create_pdf(text):
     pdf = WMCPDF()
     pdf.add_page()
+    
+    # NEUER HEADER TEXT
     pdf.set_font("Arial", "B", 14)
-    # Updated text as per your request
-    pdf.cell(0, 10, "World Music Channel - Free for Fans", ln=True)
+    pdf.cell(0, 10, "World Music Channel - Generated free for Fans", ln=True)
+    
+    # ENGLISCHE INSPIRATIONS-ZEILE
+    pdf.set_font("Arial", "I", 10)
+    pdf.set_text_color(50, 50, 50)
+    pdf.cell(0, 8, "Enjoy the lyric interpretation; perhaps a poem or a new song lyric will emerge.", ln=True)
+    
     pdf.ln(5)
     pdf.set_font("Arial", size=11)
+    pdf.set_text_color(0, 0, 0)
     safe_text = text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 7, safe_text)
     return pdf.output(dest='S').encode('latin-1')
@@ -82,7 +90,7 @@ def create_pdf(text):
 # --- UI DESIGN ---
 st.set_page_config(page_title="WMC Artist Portal", layout="centered")
 
-# CSS: Hides the GitHub icon, the Main Menu, and the "Deploy" button
+# CSS: Versteckt Toolbar, GitHub und Menü
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -108,7 +116,7 @@ with col_logo:
 
 st.markdown("---")
 
-# --- APP LOGIC ---
+# --- APP LOGIK ---
 q_code = st.text_input("Enter Quest Code:").upper()
 today_date, current_usage = get_usage_count()
 st.sidebar.title("WMC System")
@@ -117,7 +125,6 @@ st.sidebar.write(f"Daily Capacity: {current_usage} / {DAILY_LIMIT}")
 if current_usage >= DAILY_LIMIT:
     st.error(f"🚨 Daily limit reached ({DAILY_LIMIT}/{DAILY_LIMIT}). The Muse is resting for today!")
 else:
-    # New simple Quest Code: WMC1
     if q_code == "WMC1":
         st.success("✅ Connected: World Music Session")
         user_lyrics = st.text_area("Paste lyrics (Max 150 words):", height=150, max_chars=1200)
@@ -139,7 +146,6 @@ else:
                         st.info(answer)
                         
                         increment_usage()
-                        # Generates PDF with new title
                         pdf_data = create_pdf(answer)
                         col_dl, col_yt = st.columns(2)
                         with col_dl:
