@@ -6,9 +6,8 @@ import os
 import json
 import base64
 from datetime import datetime
-from streamlit_gsheets import GSheetsConnection
 
-# --- KONFIGURATION & LIMITS ---
+# --- CONFIGURATION & LIMITS ---
 MODEL_ID = "gemini-2.5-flash"
 DAILY_LIMIT = 50 
 USAGE_FILE = "usage_log.json"
@@ -18,25 +17,6 @@ SHOP_URL = "https://ko-fi.com/worldmusicchannel/shop"
 DONATE_URL = "https://ko-fi.com/worldmusicchannel/goal?g=1"
 CONTACT_EMAIL = "world.music.channel2025@gmail.com"
 QR_TARGET = YOUTUBE_URL 
-
-# WICHTIG: Ersetze dies mit deiner echten Google Sheet URL
-SHEET_URL = "DEINE_GOOGLE_SHEET_URL_HIER"
-
-# --- GOOGLE SHEETS VERBINDUNG ---
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-def log_to_gsheets(q_code, lyrics, interpretation):
-    try:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        data = {
-            "Timestamp": [now], 
-            "Quest_Code": [q_code], 
-            "Lyrics": [lyrics[:500]], 
-            "Interpretation": [interpretation[:500]]
-        }
-        conn.create(spreadsheet=SHEET_URL, data=data)
-    except Exception as e:
-        st.sidebar.error(f"Logging Error: {e}")
 
 # --- HILFSFUNKTIONEN ---
 def get_image_base64(path):
@@ -122,17 +102,11 @@ with col_logo:
 
 st.markdown("---")
 
-# --- SIDEBAR & TEST BUTTON ---
-today_date, current_usage = get_usage_count()
-st.sidebar.title("System Monitor")
-st.sidebar.write(f"Daily Capacity: {current_usage} / {DAILY_LIMIT}")
-
-if st.sidebar.button("🛠️ Test Connection"):
-    log_to_gsheets("SYSTEM-CHECK", "Testing Pioneer MIND AI", "Connection stable!")
-    st.sidebar.success("Test entry sent to Sheet!")
-
-# --- APP LOGIK ---
+# --- APP LOGIC ---
 q_code = st.text_input("Enter Quest Code:").upper()
+today_date, current_usage = get_usage_count()
+st.sidebar.title("WMC System")
+st.sidebar.write(f"Daily Capacity: {current_usage} / {DAILY_LIMIT}")
 
 if current_usage >= DAILY_LIMIT:
     st.error(f"🚨 Daily limit reached ({DAILY_LIMIT}/{DAILY_LIMIT}). The Muse is resting for today! First come, first served.")
@@ -153,10 +127,6 @@ else:
                     if response.status_code == 200:
                         answer = response.json()['candidates'][0]['content']['parts'][0]['text']
                         st.info(answer)
-                        
-                        # LOGGING TO GSHEETS
-                        log_to_gsheets(q_code, user_lyrics, answer)
-                        
                         increment_usage()
                         pdf_data = create_pdf(answer, "Lya Nights")
                         c_d, c_y = st.columns(2)
