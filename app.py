@@ -1,41 +1,35 @@
 import streamlit as st
 import requests
 
-# --- CONFIG ---
-YOUTUBE_URL = "https://www.youtube.com/@WorldMusicChannel-y3s"
+st.title("WMC - Muse Diagnostic")
 
-# --- UI DESIGN (Logo oben Rechts) ---
-st.set_page_config(page_title="WMC Artist Portal", layout="centered")
-
-col1, col2 = st.columns([3, 1])
-with col1:
-    st.title("World Music Channel")
-    st.markdown("### *Feel the Music*")
-with col2:
-    try: st.image("logo.png", width=120)
-    except: st.write("🎵")
-
-st.markdown("---")
-
-# --- LOGIK ---
-q_code = st.text_input("Quest Code:").upper()
-if q_code == "LYA-SESSION-2":
-    lyrics = st.text_area("Paste lyrics here:")
-    if st.button("Reveal Interpretation", type="primary"):
-        if "GEMINI_API_KEY" in st.secrets:
-            # Stabiler v1 Endpunkt für 2026
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={st.secrets['GEMINI_API_KEY']}"
-            res = requests.post(url, json={"contents": [{"parts": [{"text": lyrics}]}]})
-            if res.status_code == 200:
-                st.info(res.json()['candidates'][0]['content']['parts'][0]['text'])
+if "GEMINI_API_KEY" not in st.secrets:
+    st.error("Key fehlt in Secrets!")
+else:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    
+    # 1. Liste alle verfügbaren Modelle für DIESEN Key
+    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    
+    try:
+        response = requests.get(list_url)
+        if response.status_code == 200:
+            models = response.json().get('models', [])
+            model_names = [m['name'] for m in models if 'generateContent' in m.get('supportedGenerationMethods', [])]
+            
+            if model_names:
+                st.success(f"Gefundene Modelle: {model_names}")
+                # Nutze das erste Modell in der Liste
+                target = model_names[0]
+                st.write(f"Nutze Modell: {target}")
+                
+                # Test-Anfrage
+                gen_url = f"https://generativelanguage.googleapis.com/v1beta/{target}:generateContent?key={api_key}"
+                res = requests.post(gen_url, json={"contents": [{"parts": [{"text": "Hello"}]}]})
+                st.write("Antwort der Muse:", res.json()['candidates'][0]['content']['parts'][0]['text'])
             else:
-                st.error(f"Verbindung steht, aber Google meldet Fehler: {res.status_code}")
+                st.warning("Dein Key ist aktiv, aber Google gibt KEINE Modelle für dich frei. Prüfe die Regionaleinstellungen (Schweiz) im AI Studio.")
         else:
-            st.error("API Key fehlt in den Secrets!")
-
-# --- SHOP FOOTER ---
-st.markdown("---")
-cols = st.columns(4)
-links = ["HD WAV", "MP3", "Video", "Merch"]
-for i, col in enumerate(cols):
-    col.button(links[i], use_container_width=True)
+            st.error(f"Google Fehler {response.status_code}: {response.text}")
+    except Exception as e:
+        st.error(f"Fehler: {str(e)}")
