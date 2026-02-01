@@ -1,16 +1,37 @@
 import streamlit as st
 import requests
 from fpdf import FPDF
+import qrcode
+import os
 
-# --- CONFIGURATION & LINKS ---
+# --- KONFIGURATION & LINKS ---
 MODEL_ID = "gemini-2.5-flash"
 YOUTUBE_URL = "https://www.youtube.com/@WorldMusicChannel-y3s"
 HOMEPAGE_URL = "https://world-music-channel-staging.b12sites.com/index"
 SHOP_URL = "https://ko-fi.com/worldmusicchannel/shop"
 DONATE_URL = "https://ko-fi.com/worldmusicchannel/goal?g=1"
 CONTACT_EMAIL = "info@worldmusicchannel.com"
+QR_TARGET = YOUTUBE_URL # Der Link, den der QR-Code öffnen soll
 
-# --- CI-CONFORM PDF GENERATOR ---
+# --- QR-CODE GENERATOR (einmalig beim Start) ---
+QR_FILENAME = 'wmc_qr.png'
+def generate_qr_code(url, filename):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    img.save(filename)
+
+# Generiere den QR-Code, falls er noch nicht existiert
+if not os.path.exists(QR_FILENAME):
+    generate_qr_code(QR_TARGET, QR_FILENAME)
+
+# --- CI-CONFORM PDF GENERATOR MIT QR ---
 class WMCPDF(FPDF):
     def header(self):
         try:
@@ -28,19 +49,34 @@ class WMCPDF(FPDF):
         self.ln(20)
 
     def footer(self):
-        self.set_y(-25)
+        # QR Code rechts unten platzieren (x=170, y=265, größe=25mm)
+        try:
+            self.image(QR_FILENAME, 170, 265, 25)
+        except:
+            pass
+
+        self.set_y(-30) # Etwas höher ansetzen wegen QR Code
         self.set_draw_color(200, 200, 200)
-        self.line(10, self.get_y(), 200, self.get_y())
+        self.line(10, self.get_y(), 165, self.get_y()) # Linie nur bis zum QR Code
         self.ln(2)
+        
         self.set_font('Arial', '', 8)
         self.set_text_color(100, 100, 100)
-        self.cell(0, 5, f'Contact: {CONTACT_EMAIL}', 0, 0, 'L')
-        self.set_text_color(0, 0, 255)
-        self.cell(0, 5, 'YouTube: @WorldMusicChannel-y3s', 0, 1, 'R', link=YOUTUBE_URL)
-        self.set_text_color(100, 100, 100)
+        
+        # Linker Textblock
         self.set_x(10)
-        self.cell(0, 5, f'Web: {HOMEPAGE_URL}', 0, 0, 'L')
-        self.cell(0, 5, f'Page {self.page_no()}', 0, 0, 'R')
+        self.cell(150, 5, f'Contact: {CONTACT_EMAIL}', 0, 1, 'L')
+        self.set_x(10)
+        self.cell(150, 5, f'Web: {HOMEPAGE_URL}', 0, 1, 'L')
+        
+        # Rechter Textblock (über QR Code)
+        self.set_y(-30)
+        self.set_x(165)
+        self.set_text_color(0, 0, 255)
+        self.cell(40, 5, 'Scan for YouTube ->', 0, 1, 'C', link=YOUTUBE_URL)
+        self.set_x(165)
+        self.set_text_color(100, 100, 100)
+        self.cell(40, 5, f'Page {self.page_no()}', 0, 1, 'C')
 
 def create_pdf(text, session_name):
     pdf = WMCPDF()
@@ -72,12 +108,12 @@ with col_logo:
 
 st.markdown("---")
 
-# --- APP LOGIC ---
+# --- APP LOGIK ---
 q_code = st.text_input("Enter Quest Code:").upper()
 
 if q_code == "LYA-SESSION-2":
     st.success("✅ Connected: Lya Nights")
-    # Limit input to ~150 words (approx 1000 chars)
+    # Limit input to ~150 words (approx 1200 chars)
     user_lyrics = st.text_area("Paste lyrics (Max 150 words):", height=150, max_chars=1200)
     
     if st.button("✨ Reveal Interpretation", type="primary"):
@@ -109,7 +145,7 @@ if q_code == "LYA-SESSION-2":
                     pdf_data = create_pdf(answer, "Lya Nights")
                     col_dl, col_yt = st.columns(2)
                     with col_dl:
-                        st.download_button("📄 Download PDF", pdf_data, "WMC_Interpretation.pdf", "application/pdf")
+                        st.download_button("📄 Download PDF (with QR)", pdf_data, "WMC_Interpretation.pdf", "application/pdf")
                     with col_yt:
                         st.link_button("🎬 Official Video", YOUTUBE_URL)
                     st.balloons()
@@ -126,8 +162,16 @@ with c3: st.link_button("🎬 Video", SHOP_URL)
 with c4: st.link_button("👕 Merch", SHOP_URL)
 
 st.markdown("---")
-c_home, c_empty, c_donate = st.columns([2, 1, 2])
+# Layout mit QR Code unten
+c_home, c_qr, c_donate = st.columns([2, 1, 2])
 with c_home:
     st.link_button("🌐 Visit WMC Homepage", HOMEPAGE_URL)
+    st.caption(f"Contact: {CONTACT_EMAIL}")
+with c_qr:
+    st.markdown("**Scan for YouTube:**")
+    try:
+        st.image(QR_FILENAME, width=100)
+    except:
+        st.write("QR Link loading...")
 with c_donate:
-    st.link_button("❤️ DONATE", DONATE_URL)
+    st.link_button("❤️ DONATE", DONATE_URL, type="primary")
