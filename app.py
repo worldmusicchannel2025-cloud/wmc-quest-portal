@@ -20,8 +20,10 @@ QR_TARGET = YOUTUBE_URL
 
 # --- HELPER FUNCTIONS ---
 def get_image_base64(path):
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
 
 def get_usage_count():
     today = datetime.now().strftime("%Y-%m-%d")
@@ -44,7 +46,7 @@ if not os.path.exists(QR_FILENAME):
     qr = qrcode.make(QR_TARGET)
     qr.save(QR_FILENAME)
 
-# --- PDF GENERATOR ---
+# --- PDF GENERATOR (UPDATED BRANDING) ---
 class WMCPDF(FPDF):
     def header(self):
         try: self.image('logo.png', 10, 10, 25)
@@ -65,10 +67,13 @@ class WMCPDF(FPDF):
         self.set_x(35); self.cell(0, 5, f'Web: {HOMEPAGE_URL}', 0, 0, 'L')
         self.set_text_color(0, 0, 255); self.cell(0, 5, 'YouTube: @WorldMusicChannel-y3s', 0, 1, 'R', link=YOUTUBE_URL)
 
-def create_pdf(text, session_name):
+def create_pdf(text):
     pdf = WMCPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, f"Session: {session_name}", ln=True); pdf.ln(5)
+    pdf.set_font("Arial", "B", 14)
+    # Updated text as per your request
+    pdf.cell(0, 10, "World Music Channel - Free for Fans", ln=True)
+    pdf.ln(5)
     pdf.set_font("Arial", size=11)
     safe_text = text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 7, safe_text)
@@ -77,15 +82,27 @@ def create_pdf(text, session_name):
 # --- UI DESIGN ---
 st.set_page_config(page_title="WMC Artist Portal", layout="centered")
 
-c_info, c_logo = st.columns([3, 1])
-with c_info:
+# CSS: Hides the GitHub icon, the Main Menu, and the "Deploy" button
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stAppDeployButton {display:none;}
+            [data-testid="stToolbar"] {visibility: hidden !important;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
+col_info, col_logo = st.columns([3, 1])
+with col_info:
     st.title("World Music Channel")
     st.markdown("### *Feel the Music*")
     st.caption("Official Artist Portal | Digital Muse 2.5")
     st.markdown("**INTERACTIVE EXPERIENCE WMC-TOOL**")
     st.markdown("### *Official Lyric Interpretation*") 
 
-with c_logo:
+with col_logo:
     try: st.image("logo.png", use_container_width=True)
     except: st.header("🎵")
 
@@ -100,7 +117,7 @@ st.sidebar.write(f"Daily Capacity: {current_usage} / {DAILY_LIMIT}")
 if current_usage >= DAILY_LIMIT:
     st.error(f"🚨 Daily limit reached ({DAILY_LIMIT}/{DAILY_LIMIT}). The Muse is resting for today!")
 else:
-    # UPDATED QUEST CODE HERE
+    # New simple Quest Code: WMC1
     if q_code == "WMC1":
         st.success("✅ Connected: World Music Session")
         user_lyrics = st.text_area("Paste lyrics (Max 150 words):", height=150, max_chars=1200)
@@ -111,7 +128,8 @@ else:
             elif len(user_lyrics.split()) < 3:
                 st.warning("Please enter some lyrics.")
             elif "GEMINI_API_KEY" in st.secrets:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent?key={st.secrets['GEMINI_API_KEY']}"
+                api_key = st.secrets["GEMINI_API_KEY"]
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent?key={api_key}"
                 with st.spinner("The Muse is thinking..."):
                     p = f"Interpret deeply in input language (max 180 words): {user_lyrics}"
                     res = requests.post(url, json={"contents": [{"parts": [{"text": p}]}]})
@@ -121,7 +139,8 @@ else:
                         st.info(answer)
                         
                         increment_usage()
-                        pdf_data = create_pdf(answer, "WMC Official Session")
+                        # Generates PDF with new title
+                        pdf_data = create_pdf(answer)
                         col_dl, col_yt = st.columns(2)
                         with col_dl:
                             st.download_button("📄 Download PDF", pdf_data, "WMC_Interpretation.pdf")
@@ -129,7 +148,9 @@ else:
                             st.link_button("🎬 Official Video", YOUTUBE_URL)
                         st.balloons()
                     else:
-                        st.error("API Connection Error.")
+                        st.error("API Connection Error. Please try again later.")
+            else:
+                st.error("Missing API Credentials in Secrets.")
 
 # --- FOOTER ---
 st.markdown("---")
@@ -145,6 +166,7 @@ with c_home:
     st.markdown(f"<p style='font-size: 0.8rem; color: gray;'>Contact: {CONTACT_EMAIL}</p>", unsafe_allow_html=True)
 with c_qr:
     qr_b64 = get_image_base64(QR_FILENAME)
-    st.markdown(f'<div style="text-align: center;"><b>YouTube QR</b><br><img src="data:image/png;base64,{qr_b64}" width="100"></div>', unsafe_allow_html=True)
+    if qr_b64:
+        st.markdown(f'<div style="text-align: center;"><b>YouTube QR</b><br><img src="data:image/png;base64,{qr_b64}" width="100"></div>', unsafe_allow_html=True)
 with c_donate:
     st.link_button("❤️ DONATE", DONATE_URL, type="primary", use_container_width=True)
