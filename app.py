@@ -18,7 +18,7 @@ DONATE_URL = "https://ko-fi.com/worldmusicchannel/goal?g=1"
 CONTACT_EMAIL = "world.music.channel2025@gmail.com"
 QR_TARGET = YOUTUBE_URL 
 
-# --- HILFSFUNKTIONEN ---
+# --- HELPER FUNCTIONS ---
 def get_image_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
@@ -100,8 +100,9 @@ st.sidebar.write(f"Daily Capacity: {current_usage} / {DAILY_LIMIT}")
 if current_usage >= DAILY_LIMIT:
     st.error(f"🚨 Daily limit reached ({DAILY_LIMIT}/{DAILY_LIMIT}). The Muse is resting for today!")
 else:
-    if q_code == "LYA-SESSION-2":
-        st.success("✅ Connected: Lya Nights")
+    # UPDATED QUEST CODE HERE
+    if q_code == "WMC1":
+        st.success("✅ Connected: World Music Session")
         user_lyrics = st.text_area("Paste lyrics (Max 150 words):", height=150, max_chars=1200)
         
         if st.button("✨ Reveal Interpretation", type="primary"):
@@ -116,19 +117,17 @@ else:
                     res = requests.post(url, json={"contents": [{"parts": [{"text": p}]}]})
                     if res.status_code == 200:
                         answer = res.json()['candidates'][0]['content']['parts'][0]['text']
-                        # HIER BLEIBT DIE ANTWORT STEHEN
                         st.markdown("### 🔮 The Interpretation")
                         st.info(answer)
                         
                         increment_usage()
-                        pdf_data = create_pdf(answer, "Lya Nights Session")
+                        pdf_data = create_pdf(answer, "WMC Official Session")
                         col_dl, col_yt = st.columns(2)
                         with col_dl:
                             st.download_button("📄 Download PDF", pdf_data, "WMC_Interpretation.pdf")
                         with col_yt:
                             st.link_button("🎬 Official Video", YOUTUBE_URL)
                         st.balloons()
-                        # st.rerun() wurde entfernt!
                     else:
                         st.error("API Connection Error.")
 
