@@ -137,7 +137,7 @@ else:
                 with st.spinner("Processing..."):
                     try:
                         # Wir nutzen jetzt das stabile Flash-Modell:
-                        model = genai.GenerativeModel('gemini-1.5-flash', 
+                        model = genai.GenerativeModel('gemini-pro', 
                                                       system_instruction=MODELS_CONFIG[q_code]['persona'])
                         response = model.generate_content(user_lyrics)
                         
