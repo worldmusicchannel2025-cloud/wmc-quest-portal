@@ -1,69 +1,41 @@
 import streamlit as st
 import requests
-from datetime import datetime
-from fpdf import FPDF
 
-# --- LINKS ---
+# --- CONFIG ---
 YOUTUBE_URL = "https://www.youtube.com/@WorldMusicChannel-y3s"
-SHOP_LINKS = {
-    "wav": "https://www.worldmusicchannel.com/shop/hd-wav",
-    "mp3": "https://www.worldmusicchannel.com/shop/mp3",
-    "video": "https://www.worldmusicchannel.com/shop/video",
-    "merch": "https://www.worldmusicchannel.com/shop/merch"
-}
 
 # --- UI DESIGN (Logo oben Rechts) ---
-st.set_page_config(page_title="WMC Artist Portal", page_icon="🎵")
+st.set_page_config(page_title="WMC Artist Portal", layout="centered")
 
-# Header: Info links, Logo rechts
-col_info, col_logo = st.columns([2, 1])
-with col_info:
+col1, col2 = st.columns([3, 1])
+with col1:
     st.title("World Music Channel")
     st.markdown("### *Feel the Music*")
-    st.caption("Official Artist Portal & Fan Experience. Unlock the hidden soul of your favorite lyrics.")
-
-with col_logo:
-    try:
-        # Nutzt die logo.png aus deinem GitHub
-        st.image("logo.png", use_container_width=True)
-    except:
-        st.header("🎵")
+with col2:
+    try: st.image("logo.png", width=120)
+    except: st.write("🎵")
 
 st.markdown("---")
 
-# --- APP LOGIK ---
-q_code = st.text_input("Enter Quest Code:").upper()
-
+# --- LOGIK ---
+q_code = st.text_input("Quest Code:").upper()
 if q_code == "LYA-SESSION-2":
-    st.success("✅ Connected: Lya Nights - City Lights")
-    user_lyrics = st.text_area("Paste your favorite lyrics here:")
-    
-    if st.button("✨ Reveal Interpretation", type="primary"):
+    lyrics = st.text_area("Paste lyrics here:")
+    if st.button("Reveal Interpretation", type="primary"):
         if "GEMINI_API_KEY" in st.secrets:
-            api_key = st.secrets["GEMINI_API_KEY"]
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-            
-            with st.spinner("The Muse is thinking..."):
-                payload = {"contents": [{"parts": [{"text": user_lyrics}]}]}
-                response = requests.post(url, json=payload)
-                
-                if response.status_code == 200:
-                    answer = response.json()['candidates'][0]['content']['parts'][0]['text']
-                    st.info(answer)
-                else:
-                    st.error(f"Error: {response.status_code}")
+            # Stabiler v1 Endpunkt für 2026
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={st.secrets['GEMINI_API_KEY']}"
+            res = requests.post(url, json={"contents": [{"parts": [{"text": lyrics}]}]})
+            if res.status_code == 200:
+                st.info(res.json()['candidates'][0]['content']['parts'][0]['text'])
+            else:
+                st.error(f"Verbindung steht, aber Google meldet Fehler: {res.status_code}")
         else:
-            st.error("API Key missing in Streamlit Secrets!")
+            st.error("API Key fehlt in den Secrets!")
 
-# --- SHOP BUTTONS UNTEN ---
+# --- SHOP FOOTER ---
 st.markdown("---")
-st.markdown("### 🛍️ Exclusive WMC Collection")
-c1, c2, c3, c4 = st.columns(4)
-with c1:
-    st.link_button("🎧 HD WAV", SHOP_LINKS["wav"])
-with c2:
-    st.link_button("🎵 MP3", SHOP_LINKS["mp3"])
-with c3:
-    st.link_button("🎬 Video", SHOP_LINKS["video"])
-with c4:
-    st.link_button("👕 Merch", SHOP_LINKS["merch"])
+cols = st.columns(4)
+links = ["HD WAV", "MP3", "Video", "Merch"]
+for i, col in enumerate(cols):
+    col.button(links[i], use_container_width=True)
