@@ -1,5 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
+import requests
+import json
 from datetime import datetime
 from fpdf import FPDF
 
@@ -41,8 +42,6 @@ class WMCPDF(FPDF):
 
     def footer(self):
         self.set_y(-25)
-        
-        # WICHTIG: ">>" statt Play-Symbol verhindert PDF-Absturz!
         self.set_font('Arial', 'B', 10)
         self.set_text_color(0, 0, 255)
         self.cell(0, 5, '>> Click here to visit our YouTube Channel', 0, 1, 'C', link=YOUTUBE_VIDEO_URL)
@@ -59,27 +58,34 @@ def create_corporate_pdf(interpretation_text, code_name):
     pdf = WMCPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=20)
-    
     pdf.set_font("Arial", "B", 14)
     pdf.set_text_color(0)
     pdf.cell(0, 10, f"Interpretation: {code_name}", ln=True, align='L')
     pdf.ln(5)
-    
     pdf.set_font("Arial", size=11)
-    # Filtert problematische Zeichen heraus
     safe_text = interpretation_text.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 7, safe_text)
-    
     return pdf.output(dest='S').encode('latin-1')
 
-# --- CONFIGURATION ---
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=api_key)
-except Exception:
-    st.error("Error: API Key not found.")
-    st.stop()
+# --- NEUE ENGINE (DIREKT-VERBINDUNG) ---
+def get_gemini_response(prompt, api_key):
+    # Wir nutzen die stabile v1beta API direkt, ohne kaputte Bibliothek
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code == 200:
+            return response.json()['candidates'][0]['content']['parts'][0]['text']
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+    except Exception as e:
+        return f"Connection Error: {str(e)}"
 
+# --- CONFIGURATION ---
 QUEST_END_DATE = datetime(2026, 2, 15) 
 MODELS_CONFIG = {
     "LYA-SESSION-2": {
@@ -87,7 +93,7 @@ MODELS_CONFIG = {
             "You are the digital muse of Lya Nights. Interpret the lyrics deeply but concisely. "
             "IMPORTANT RULES: "
             "1. Answer in the same language as the lyrics. "
-            "2. KEEP IT SHORT: Maximum 150-200 words (about half a page). "
+            "2. KEEP IT SHORT: Maximum 150-200 words. "
             "3. Focus on the core meaning and urban poetry."
         ),
         "name": "Lya Nights - City Lights"
@@ -108,10 +114,6 @@ with col_info:
     st.title("World Music Channel")
     st.markdown("### *Feel the Music*") 
     st.caption("Official Artist Portal")
-    try:
-        st.image("album.jpg", width=300, caption="New Album Out Now!")
-    except:
-        st.info("New Album 'City Lights' - Available in Shop!")
 
 st.markdown("---")
 
@@ -134,35 +136,35 @@ else:
         
         if st.button("✨ Reveal Interpretation"):
             if len(user_lyrics) > 5:
-                with st.spinner("Processing..."):
-                    try:
-                        # Wir nutzen das Standard Flash Modell
-                        model = genai.GenerativeModel('gemini-1.5-flash')
-                        
-                        # Wir kleben die Persona einfach vorne an den Text (funktioniert immer)
+                # API KEY CHECK
+                if "GEMINI_API_KEY" not in st.secrets:
+                    st.error("⚠️ API Key fehlt in den Secrets!")
+                else:
+                    with st.spinner("Connecting to Muse..."):
+                        # Prompt zusammenbauen
                         full_prompt = MODELS_CONFIG[q_code]['persona'] + "\n\nLYRICS:\n" + user_lyrics
                         
-                        response = model.generate_content(full_prompt)
+                        # Aufruf der neuen Engine
+                        result_text = get_gemini_response(full_prompt, st.secrets["GEMINI_API_KEY"])
                         
-                        st.markdown("---")
-                        st.markdown("### 🔮 Your Personal Interpretation")
-                        st.info(response.text)
-                        
-                        pdf_bytes = create_corporate_pdf(response.text, MODELS_CONFIG[q_code]['name'])
-                        st.download_button(
-                            label="📄 Download Official PDF (WMC Design)",
-                            data=pdf_bytes,
-                            file_name="WMC_Interpretation.pdf",
-                            mime="application/pdf"
-                        )
-                        
-                        st.caption("👇 Click inside to copy for YouTube:")
-                        st.text_area("Copy Text", value=response.text, height=100, label_visibility="collapsed")
-                        st.link_button("Go to YouTube to Comment 🎬", YOUTUBE_VIDEO_URL)
-                        
-                    except Exception as e:
-                        # Detaillierte Fehlermeldung falls etwas schiefgeht
-                        st.error(f"Error ({type(e).__name__}): {e}")
+                        if "Error:" in result_text:
+                            st.error(result_text)
+                        else:
+                            st.markdown("---")
+                            st.markdown("### 🔮 Your Personal Interpretation")
+                            st.info(result_text)
+                            
+                            pdf_bytes = create_corporate_pdf(result_text, MODELS_CONFIG[q_code]['name'])
+                            st.download_button(
+                                label="📄 Download Official PDF (WMC Design)",
+                                data=pdf_bytes,
+                                file_name="WMC_Interpretation.pdf",
+                                mime="application/pdf"
+                            )
+                            
+                            st.caption("👇 Copy for YouTube:")
+                            st.text_area("Copy Text", value=result_text, height=100, label_visibility="collapsed")
+                            st.link_button("Go to YouTube 🎬", YOUTUBE_VIDEO_URL)
     elif q_code != "":
         st.warning("Invalid Code.")
 
@@ -171,23 +173,10 @@ st.markdown("---")
 st.markdown("### 🛍️ Exclusive WMC Collection")
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown("**🎧 HD WAV**")
-    st.caption("Audiophile Quality")
-    st.link_button("Go to Shop", SHOP_LINKS["wav"])
+    st.link_button("🎧 HD WAV", SHOP_LINKS["wav"])
 with c2:
-    st.markdown("**🎵 MP3**")
-    st.caption("Universal Format")
-    st.link_button("Go to Shop", SHOP_LINKS["mp3"])
+    st.link_button("🎵 MP3", SHOP_LINKS["mp3"])
 with c3:
-    st.markdown("**🎬 Video**")
-    st.caption("Official Cut")
-    st.link_button("Go to Shop", SHOP_LINKS["video"])
+    st.link_button("🎬 Video", SHOP_LINKS["video"])
 with c4:
-    st.markdown("**👕 Merch**")
-    st.caption("Shirt & Mug")
-    st.link_button("Go to Shop", SHOP_LINKS["merch"])
-
-st.markdown("---")
-col_l, col_center, col_r = st.columns([1, 2, 1])
-with col_center:
-    st.link_button("🌐 Visit Official Homepage (World Music Channel)", HOMEPAGE_URL, use_container_width=True)
+    st.link_button("👕 Merch", SHOP_LINKS["merch"])
