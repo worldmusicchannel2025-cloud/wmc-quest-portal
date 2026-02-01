@@ -10,7 +10,7 @@ YOUTUBE_URL = "https://www.youtube.com/@WorldMusicChannel-y3s"
 HOMEPAGE_URL = "https://world-music-channel-staging.b12sites.com/index"
 SHOP_URL = "https://ko-fi.com/worldmusicchannel/shop"
 DONATE_URL = "https://ko-fi.com/worldmusicchannel/goal?g=1"
-CONTACT_EMAIL = "info@worldmusicchannel.com"
+CONTACT_EMAIL = "world.music.channel2025@gmail.com"
 QR_TARGET = YOUTUBE_URL 
 
 # --- QR-CODE GENERATOR ---
@@ -25,7 +25,7 @@ def generate_qr_code(url, filename):
 if not os.path.exists(QR_FILENAME):
     generate_qr_code(QR_TARGET, QR_FILENAME)
 
-# --- PDF GENERATOR (CI-KONFORM) ---
+# --- PDF GENERATOR (LAYOUT-FIX) ---
 class WMCPDF(FPDF):
     def header(self):
         try: self.image('logo.png', 10, 10, 25)
@@ -41,25 +41,27 @@ class WMCPDF(FPDF):
         self.ln(20)
 
     def footer(self):
-        try: self.image(QR_FILENAME, 170, 265, 25)
+        # QR Code nach links verschoben, um Überlappung zu vermeiden
+        try: self.image(QR_FILENAME, 10, 265, 22)
         except: pass
+        
         self.set_y(-30)
         self.set_draw_color(200, 200, 200)
-        self.line(10, self.get_y(), 165, self.get_y())
+        self.line(10, self.get_y(), 200, self.get_y())
         self.ln(2)
+        
         self.set_font('Arial', '', 8)
         self.set_text_color(100, 100, 100)
-        self.set_x(10)
-        self.cell(150, 5, f'Contact: {CONTACT_EMAIL}', 0, 1, 'L')
-        self.set_x(10)
-        self.cell(150, 5, f'Web: {HOMEPAGE_URL}', 0, 1, 'L')
-        self.set_y(-30)
-        self.set_x(165)
+        
+        # Texte nach rechts verschoben, damit sie nicht über dem QR liegen
+        self.set_x(35)
+        self.cell(0, 5, f'Contact: {CONTACT_EMAIL}', 0, 1, 'L')
+        self.set_x(35)
+        self.cell(0, 5, f'Web: {HOMEPAGE_URL}', 0, 0, 'L')
+        
+        # YouTube Link ganz rechts
         self.set_text_color(0, 0, 255)
-        self.cell(40, 5, 'Scan for YouTube ->', 0, 1, 'C', link=YOUTUBE_URL)
-        self.set_x(165)
-        self.set_text_color(100, 100, 100)
-        self.cell(40, 5, f'Page {self.page_no()}', 0, 1, 'C')
+        self.cell(0, 5, 'YouTube: @WorldMusicChannel-y3s', 0, 1, 'R', link=YOUTUBE_URL)
 
 def create_pdf(text, session_name):
     pdf = WMCPDF()
@@ -93,15 +95,14 @@ q_code = st.text_input("Enter Quest Code:").upper()
 
 if q_code == "LYA-SESSION-2":
     st.success("✅ Connected: Lya Nights")
-    # FIX: Hier war der Syntaxfehler (Klammer geschlossen)
     user_lyrics = st.text_area("Paste lyrics (Max 150 words):", height=150, max_chars=1200)
     
     if st.button("✨ Reveal Interpretation", type="primary"):
         word_count = len(user_lyrics.split())
         if word_count > 150:
-            st.error(f"Limit exceeded! Max 150 words. Current: {word_count}")
+            st.error(f"Limit exceeded! Current: {word_count}")
         elif word_count < 3:
-            st.warning("Please enter some lyrics first.")
+            st.warning("Please enter some lyrics.")
         elif "GEMINI_API_KEY" in st.secrets:
             api_key = st.secrets["GEMINI_API_KEY"]
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent?key={api_key}"
@@ -131,20 +132,21 @@ with c3: st.link_button("🎬 Video", SHOP_URL, use_container_width=True)
 with c4: st.link_button("👕 Merch", SHOP_URL, use_container_width=True)
 
 st.markdown("---")
-# Layout: Homepage (links), QR (mitte), Spacer, Donate (rechts)
-c_home, c_qr, c_spacer, c_donate = st.columns([2.5, 1.2, 0.5, 1.5])
+# --- ZENTRIERTER QR CODE & BUTTONS ---
+c_home, c_qr, c_donate = st.columns([2, 1, 2])
 
 with c_home:
-    st.link_button("🌐 Visit WMC Homepage", HOMEPAGE_URL, use_container_width=True)
+    st.link_button("🌐 Visit Homepage", HOMEPAGE_URL, use_container_width=True)
     st.caption(f"Contact: {CONTACT_EMAIL}")
 
 with c_qr:
-    st.markdown("**YouTube QR:**")
-    try: st.image(QR_FILENAME, width=85)
-    except: st.write("QR Error")
-
-with c_spacer:
-    st.write("") 
+    st.markdown("<div style='text-align: center'><b>YouTube QR</b></div>", unsafe_allow_html=True)
+    try:
+        # QR Code wird hier optisch zentriert
+        st.image(QR_FILENAME, width=100)
+    except:
+        st.write("QR Error")
 
 with c_donate:
+    # Button rechtsbündig durch Spalten-Ratio
     st.link_button("❤️ DONATE", DONATE_URL, type="primary", use_container_width=True)
