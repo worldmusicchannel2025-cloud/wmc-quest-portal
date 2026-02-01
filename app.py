@@ -78,8 +78,8 @@ def create_corporate_pdf(interpretation_text, code_name):
 
 # --- ENGINE (DIREKT-VERBINDUNG) ---
 def get_gemini_response(prompt, api_key):
-    # FIX: Hier nutzen wir jetzt 'gemini-pro' (der Klassiker, der immer geht)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    # FIX: Wir nutzen jetzt explizit gemini-1.5-flash (modern & schnell)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     headers = {'Content-Type': 'application/json'}
     data = {
         "contents": [{"parts": [{"text": prompt}]}]
