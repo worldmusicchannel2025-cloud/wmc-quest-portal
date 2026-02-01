@@ -2,4 +2,3 @@ streamlit
 requests
 fpdf
 qrcode[pil]
-st-gsheets-connection
