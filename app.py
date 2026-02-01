@@ -46,7 +46,7 @@ if not os.path.exists(QR_FILENAME):
     qr = qrcode.make(QR_TARGET)
     qr.save(QR_FILENAME)
 
-# --- PDF GENERATOR (NEW HEADER & INSPIRATION TEXT) ---
+# --- PDF GENERATOR ---
 class WMCPDF(FPDF):
     def header(self):
         try: self.image('logo.png', 10, 10, 25)
@@ -70,16 +70,11 @@ class WMCPDF(FPDF):
 def create_pdf(text):
     pdf = WMCPDF()
     pdf.add_page()
-    
-    # NEUER HEADER TEXT
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "World Music Channel - Generated free for Fans", ln=True)
-    
-    # ENGLISCHE INSPIRATIONS-ZEILE
     pdf.set_font("Arial", "I", 10)
     pdf.set_text_color(50, 50, 50)
     pdf.cell(0, 8, "Enjoy the lyric interpretation; perhaps a poem or a new song lyric will emerge.", ln=True)
-    
     pdf.ln(5)
     pdf.set_font("Arial", size=11)
     pdf.set_text_color(0, 0, 0)
@@ -90,14 +85,17 @@ def create_pdf(text):
 # --- UI DESIGN ---
 st.set_page_config(page_title="WMC Artist Portal", layout="centered")
 
-# CSS: Versteckt Toolbar, GitHub und Menü
+# TOTAL STEALTH CSS: Versteckt absolut alles von Streamlit & GitHub
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             header {visibility: hidden;}
             .stAppDeployButton {display:none;}
-            [data-testid="stToolbar"] {visibility: hidden !important;}
+            [data-testid="stToolbar"] {display: none !important;}
+            [data-testid="stDecoration"] {display: none !important;}
+            [data-testid="stStatusWidget"] {display: none !important;}
+            #viewer-foo {display: none !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
@@ -144,7 +142,6 @@ else:
                         answer = res.json()['candidates'][0]['content']['parts'][0]['text']
                         st.markdown("### 🔮 The Interpretation")
                         st.info(answer)
-                        
                         increment_usage()
                         pdf_data = create_pdf(answer)
                         col_dl, col_yt = st.columns(2)
@@ -154,9 +151,7 @@ else:
                             st.link_button("🎬 Official Video", YOUTUBE_URL)
                         st.balloons()
                     else:
-                        st.error("API Connection Error. Please try again later.")
-            else:
-                st.error("Missing API Credentials in Secrets.")
+                        st.error("API Connection Error.")
 
 # --- FOOTER ---
 st.markdown("---")
