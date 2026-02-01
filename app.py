@@ -136,8 +136,8 @@ else:
             if len(user_lyrics) > 5:
                 with st.spinner("Processing..."):
                     try:
-                        # HIER IST DIE LÖSUNG: Wir nehmen die 'Lite' Version aus deiner Liste!
-                        model = genai.GenerativeModel('models/gemini-2.0-flash-lite-001', 
+                        # Wir nutzen jetzt das stabile Flash-Modell:
+                        model = genai.GenerativeModel('gemini-1.5-flash', 
                                                       system_instruction=MODELS_CONFIG[q_code]['persona'])
                         response = model.generate_content(user_lyrics)
                         
