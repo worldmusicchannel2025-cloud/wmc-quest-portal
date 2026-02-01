@@ -136,11 +136,12 @@ else:
             if len(user_lyrics) > 5:
                 with st.spinner("Processing..."):
                     try:
-                      # 1. Wir bauen den Prompt manuell zusammen (das ist idiotensicher)
-                        full_prompt = MODELS_CONFIG[q_code]['persona'] + "\n\nHIER IST DER TEXT:\n" + user_lyrics
+                        # Wir nutzen das Standard Flash Modell
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         
-                        # 2. Wir nutzen das Standard-Modell 'gemini-pro' (ohne System-Instruction Parameter)
-                        model = genai.GenerativeModel('gemini-pro')
+                        # Wir kleben die Persona einfach vorne an den Text (funktioniert immer)
+                        full_prompt = MODELS_CONFIG[q_code]['persona'] + "\n\nLYRICS:\n" + user_lyrics
+                        
                         response = model.generate_content(full_prompt)
                         
                         st.markdown("---")
