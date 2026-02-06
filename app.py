@@ -157,7 +157,12 @@ else:
 st.markdown("---")
 st.markdown("### 🛍️ Exclusive WMC Collection")
 c_sh = st.columns(4)
-for i, txt in enumerate(["🎧 HD WAV", "🎵 MP3", "🎬 Video", "👕 Merch"]):
+
+# Dein angepasster Mix: Master Audio, 4K Visuals, MP3, Official Shop
+button_labels = ["💎 Master Audio", "🎬 4K Visuals", "🎵 MP3", "🛍️ Official Shop"]
+
+for i, txt in enumerate(button_labels):
+    # Alle Buttons führen weiterhin zur selben SHOP_URL
     with c_sh[i]: st.link_button(txt, SHOP_URL, use_container_width=True)
 
 st.markdown("---")
