@@ -123,7 +123,7 @@ st.sidebar.write(f"Daily Capacity: {current_usage} / {DAILY_LIMIT}")
 if current_usage >= DAILY_LIMIT:
     st.error(f"🚨 Daily limit reached ({DAILY_LIMIT}/{DAILY_LIMIT}). The Muse is resting for today!")
 else:
-    if q_code == "WMC1":
+    if q_code == "RED1":
         st.success("✅ Connected: World Music Session")
         # ANPASSUNG 2: Eingabe auf 150 Zeichen begrenzt (max_chars)
         user_lyrics = st.text_area("Paste lyrics (Max 150 characters):", height=150, max_chars=150)
