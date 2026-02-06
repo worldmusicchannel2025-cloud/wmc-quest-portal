@@ -9,7 +9,7 @@ from datetime import datetime
 
 # --- CONFIGURATION & LIMITS ---
 MODEL_ID = "gemini-2.5-flash"
-DAILY_LIMIT = 50 
+DAILY_LIMIT = 20  # ANPASSUNG 1: Limit auf 20 reduziert
 USAGE_FILE = "usage_log.json"
 YOUTUBE_URL = "https://www.youtube.com/@WorldMusicChannel-y3s"
 HOMEPAGE_URL = "https://world-music-channel-staging.b12sites.com/index"
@@ -85,7 +85,7 @@ def create_pdf(text):
 # --- UI DESIGN ---
 st.set_page_config(page_title="WMC Artist Portal", layout="centered")
 
-# TOTAL STEALTH CSS: Versteckt absolut alles von Streamlit & GitHub
+# TOTAL STEALTH CSS
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -125,12 +125,12 @@ if current_usage >= DAILY_LIMIT:
 else:
     if q_code == "WMC1":
         st.success("✅ Connected: World Music Session")
-        user_lyrics = st.text_area("Paste lyrics (Max 150 words):", height=150, max_chars=1200)
+        # ANPASSUNG 2: Eingabe auf 150 Zeichen begrenzt (max_chars)
+        user_lyrics = st.text_area("Paste lyrics (Max 150 characters):", height=150, max_chars=150)
         
         if st.button("✨ Reveal Interpretation", type="primary"):
-            if len(user_lyrics.split()) > 150:
-                st.error("Too many words!")
-            elif len(user_lyrics.split()) < 3:
+            # ANPASSUNG 2: Überprüfung auf leere Eingabe (Wort-Check entfernt, da Zeichenlimit greift)
+            if len(user_lyrics.strip()) < 3:
                 st.warning("Please enter some lyrics.")
             elif "GEMINI_API_KEY" in st.secrets:
                 api_key = st.secrets["GEMINI_API_KEY"]
@@ -165,6 +165,9 @@ c_home, c_qr, c_donate = st.columns([2, 1, 2])
 with c_home:
     st.link_button("🌐 Visit Homepage", HOMEPAGE_URL, use_container_width=True)
     st.markdown(f"<p style='font-size: 0.8rem; color: gray;'>Contact: {CONTACT_EMAIL}</p>", unsafe_allow_html=True)
+    # ANPASSUNG 3: Klickbarer YouTube Link direkt unter dem Kontakt
+    st.markdown(f"<a href='{YOUTUBE_URL}' target='_blank' style='font-size: 0.8rem; color: red; text-decoration: none;'>▶ Visit World Music Channel (YouTube)</a>", unsafe_allow_html=True)
+
 with c_qr:
     qr_b64 = get_image_base64(QR_FILENAME)
     if qr_b64:
